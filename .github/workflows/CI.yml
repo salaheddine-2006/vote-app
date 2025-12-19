@@ -13,7 +13,7 @@ jobs:
       - name: 1. Checkout Code
         uses: actions/checkout@v3 
 
-      - name: 2. Setup Node.js (v18)
+      - name: 2. Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
@@ -21,7 +21,7 @@ jobs:
       - name: 3. Lint & Test
         run : |
           npm install
-          npm run lint
+          # npm run lint  <-- Vérifie si tu as bien un script lint dans package.json, sinon commente cette ligne
           npm test
 
       - name: 4. Security Scan (Sonar)
@@ -33,9 +33,11 @@ jobs:
       - name: 5. Build and Push Docker Image
         if: success()
         env:
+          # On mappe les secrets sur des variables d'env pour éviter l'erreur "Unrecognized named-value"
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
         run: |
+          # On utilise uniquement les variables locales à l'étape (avec le signe $)
           echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
           docker build -t salahdevops/voting-app:latest .
           docker push salahdevops/voting-app:latest

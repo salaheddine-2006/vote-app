@@ -1,0 +1,46 @@
+name: CI Pipeline
+
+on: 
+  push: 
+    branches:
+      - main
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      # This step checks out (downloads) your repository code into the GitHub Actions runner.
+      # 
+      # What it does:
+      # - Uses the official GitHub action 'actions/checkout' at version 3
+      # - Downloads your entire repository content to the virtual machine running the workflow
+      # - Makes your code available for subsequent steps in the workflow (like building, testing, or deploying)
+      # - By default, it checks out the branch or commit that triggered the workflow
+      #
+      # Why you need it:
+      # - Without this step, the workflow wouldn't have access to your project files
+      # - It's typically one of the first steps in most CI/CD workflows
+      # - Version v3 is the third major version, which includes performance improvements and bug fixes
+      #
+      # Common use case:
+      # - Required before you can run tests, build Docker images, or deploy your application
+      # - Must be present if any following steps need to access files from your repository
+      - uses: actions/checkout@v3 
+
+      - name: lint & test
+        run : |
+          npm install
+          npm run lint
+          npm test
+
+      - name: security scan (sonar)
+        uses: sonarsource/sonarcloud-github-action@master 
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: build and push docker image
+        if: success()
+        uses :
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            docker build -t mon-repo/voting-app:latest .
+            docker push mon-repo/voting-app:latest

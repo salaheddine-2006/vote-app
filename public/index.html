@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Voting App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .voting-buttons {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .vote-btn {
+            flex: 1;
+            padding: 40px 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        .vote-btn-a {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .vote-btn-b {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .vote-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .vote-btn:active {
+            transform: translateY(-2px);
+        }
+
+        .results {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+        }
+
+        .results h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .result-label {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .result-count {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .total {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #666;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 1em;
+            font-weight: bold;
+            border: 2px solid #dc3545;
+            background: white;
+            color: #dc3545;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: #dc3545;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .reset-btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            .voting-buttons {
+                flex-direction: column;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .vote-btn {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗳️ DevOps Voting App</h1>
+        <p class="subtitle">Cast your vote and see live results!</p>
+        
+        <div class="voting-buttons">
+            <button class="vote-btn vote-btn-a" onclick="vote('A')">
+                Vote for<br>Option A
+            </button>
+            <button class="vote-btn vote-btn-b" onclick="vote('B')">
+                Vote for<br>Option B
+            </button>
+
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="results">
+            <h2>📊 Live Results</h2>
+            <div class="result-item">
+                <span class="result-label">Option A:</span>
+                <span class="result-count" id="countA">0</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Option B:</span>
+                <span class="result-count" id="countB">0</span>
+            </div>
+            <div class="total">
+                Total Votes: <strong id="totalVotes">0</strong>
+            </div>
+            <button class="reset-btn" onclick="resetVotes()">🔄 Reset All Votes</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to vote
+        async function vote(option) {
+            try {
+                const response = await fetch('/vote', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ option })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(`Vote for Option ${option} recorded! 🎉`, 'success');
+                    updateResults();
+                } else {
+                    showMessage(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to record vote. Please try again.', 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        // Function to update results
+        async function updateResults() {
+            try {
+                const response = await fetch('/results');
+                const data = await response.json();
+
+                document.getElementById('countA').textContent = data.optionA;
+                document.getElementById('countB').textContent = data.optionB;
+                document.getElementById('totalVotes').textContent = data.total;
+            } catch (error) {
+                console.error('Error fetching results:', error);
+            }
+        }
+
+        // Function to reset votes
+        async function resetVotes() {
+            if (!confirm('Are you sure you want to reset all votes?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('All votes have been reset! 🔄', 'success');
+                    updateResults();
+                } else {
+                    showMessage(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to reset votes. Please try again.', 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        // Function to show messages
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            
+            setTimeout(() => {
+                messageEl.className = 'message';
+            }, 3000);
+        }
+
+        // Update results every 2 seconds
+        setInterval(updateResults, 2000);
+
+        // Initial load
+        updateResults();
+    </script>
+</body>
+</html>

@@ -9,47 +9,33 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     steps:
-      # This step checks out (downloads) your repository code into the GitHub Actions runner.
-      # 
-      # What it does:
-      # - Uses the official GitHub action 'actions/checkout' at version 3
-      # - Downloads your entire repository content to the virtual machine running the workflow
-      # - Makes your code available for subsequent steps in the workflow (like building, testing, or deploying)
-      # - By default, it checks out the branch or commit that triggered the workflow
-      #
-      # Why you need it:
-      # - Without this step, the workflow wouldn't have access to your project files
-      # - It's typically one of the first steps in most CI/CD workflows
-      # - Version v3 is the third major version, which includes performance improvements and bug fixes
-      #
-      # Common use case:
-      # - Required before you can run tests, build Docker images, or deploy your application
-      # - Must be present if any following steps need to access files from your repository
-      - uses: actions/checkout@v3 
+      
+      - name: 1. Checkout Code
+        uses: actions/checkout@v3 
 
-      - name: lint & test
+      - name: 2. Setup Node.js (v18)
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: 3. Lint & Test
         run : |
           npm install
           npm run lint
           npm test
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Security Scan (Sonar)
+      - name: 4. Security Scan (Sonar)
         uses: sonarsource/sonarqube-scan-action@v3
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
 
-      - name: build and push docker image
+      - name: 5. Build and Push Docker Image
         if: success()
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-            docker build -t salahdevops/voting-app:latest .
-            docker push salahdevops/voting-app:latest
+          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+          docker build -t salahdevops/voting-app:latest .
+          docker push salahdevops/voting-app:latest
